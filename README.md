@@ -40,7 +40,24 @@ O quadro "O que tem em cada dia", os selos de dia nos produtos, os avisos no
 pedido e os dados estruturados para o Google são gerados a partir desses dois
 arquivos. Não é preciso editar texto em outro lugar.
 
-## Publicar
+## Deploy automático (Vercel)
+
+O repositório da Maionese (https://github.com/maionese-san/maionese-sanremo) está
+conectado à Vercel (conta `maionese-san`). Cada push na `main` publica em
+https://maionese-sanremo.vercel.app.
+
+Neste clone, o `origin` tem dois destinos de push, então `git push` atualiza os dois:
+
+- `eaeDanilo/maionese-sanremo`: cópia pessoal (privada)
+- `maionese-san/maionese-sanremo`: repositório da Maionese, que dispara o deploy
+
+O push para a Maionese usa o login `maionese-san` do GitHub CLI (`gh`), configurado
+só nesta pasta (`git config --local --get-regexp credential`). Para enviar só para
+a Maionese: `git push maionese main`.
+
+Enquanto o site for só para revisão, o `vercel.json` manda `noindex` (fora do Google).
+
+## Publicar na Hostinger (site oficial)
 
 O domínio atual está na Hostinger (servidor `hcdn`, DNS `dns-parking.com`).
 
