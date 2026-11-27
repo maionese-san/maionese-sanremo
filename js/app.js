@@ -184,7 +184,6 @@
       <div class="produto__info">
         <h4 class="produto__nome">${esc(p.nome)}</h4>
         <p class="produto__detalhe">${esc(p.detalhe)}</p>
-        ${p.dias ? `<p class="chip-dias">${ico('cal')}${esc(textoDias(p.dias, { curto: true }))}</p>` : ''}
         <div class="produto__rodape">
           <p class="preco">${dinheiro(PRODUTOS[p.id].cent)}<small>${esc(porUnidade(p.unidade))}</small></p>
           <div class="acao" data-acao="${p.id}">${htmlControle(p.id)}</div>
@@ -205,47 +204,103 @@
     $('[data-categorias]').innerHTML = CARDAPIO.map((cat) => `<a href="#cat-${cat.id}" data-cat="${cat.id}">${esc(cat.titulo)}</a>`).join('');
   }
 
-  /** "O que tem em cada dia", derivado das lojas e dos dias de cada item. */
-  function renderAgenda() {
-    const todos = Object.values(PRODUTOS);
-    const grupos = [];
-    SEMANA.forEach((d) => {
-      const lojas = CFG.lojas.filter((l) => temDia(l.horarios, d));
-      if (!lojas.length) return;
-      const disp = todos.filter((p) => !p.dias || p.dias.includes(d));
-      const chave = `${lojas.map((l) => l.id)}|${disp.map((p) => p.id)}`;
-      const g = grupos[grupos.length - 1];
-      if (g && g.chave === chave && consecutivos(g.dias[g.dias.length - 1], d)) g.dias.push(d);
-      else grupos.push({ dias: [d], lojas, disp, chave });
-    });
-    if (grupos.length < 2) { $('[data-agenda]').innerHTML = ''; return; }
+  /* ------------------------------------------------------------------
+     Dia do pedido: o cardápio mostra só o que sai nesse dia
+     ------------------------------------------------------------------ */
+  const artigoDia = (d) => (d.getDay() === 0 || d.getDay() === 6 ? 'no' : 'na');
+  /** "hoje", "amanhã", "na sexta", "no sábado" */
+  function nomeDoDia(d) {
+    const hoje = diaZero(new Date());
+    if (iso(d) === iso(hoje)) return 'hoje';
+    if (iso(d) === iso(diaZero(hoje, 1))) return 'amanhã';
+    return `${artigoDia(d)} ${DIAS[d.getDay()]}`;
+  }
+  const saiNoDia = (d) => Object.values(PRODUTOS).filter((p) => itemDisponivel(p, d));
 
-    // descreve itens agrupando categorias inteiras ("Maionese" em vez dos 3 tamanhos)
-    const descrever = (lista) => {
-      const partes = [];
-      CARDAPIO.forEach((cat) => {
-        const daCat = cat.itens.filter((p) => lista.some((x) => x.id === p.id));
-        if (!daCat.length) return;
-        if (daCat.length === cat.itens.length && cat.itens.length > 1) partes.push(cat.titulo);
-        else daCat.forEach((p) => partes.push(p.nome));
+  /** Próximos dias em que pelo menos uma loja atende (hoje só entra se ainda der tempo). */
+  function diasDoCardapio() {
+    const hoje = diaZero(new Date());
+    const lista = [];
+    for (let i = 0; i < (CFG.diasParaAgendar || 7); i++) {
+      const d = diaZero(hoje, i);
+      const lojas = CFG.lojas.filter((l) => opcoesHorario(l, d).length > 0);
+      if (!lojas.length) continue;
+      const rotulo = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : cap(DIAS_CURTOS[d.getDay()]);
+      const sub = i <= 1 ? `${DIAS_CURTOS[d.getDay()]} ${ddmm(d)}` : ddmm(d);
+      lista.push({ d, lojas, rotulo, sub });
+    }
+    return lista;
+  }
+
+  /** Esconde do cardápio (e do menu de categorias) o que não sai no dia escolhido. */
+  function filtrarCardapio(data) {
+    CARDAPIO.forEach((cat) => {
+      const secao = $(`#cat-${cat.id}`);
+      let visiveis = 0;
+      cat.itens.forEach((p) => {
+        const ok = !data || itemDisponivel(p, data);
+        if (ok) visiveis++;
+        const caixa = $(`[data-acao="${p.id}"]`, secao);
+        const el = caixa && caixa.closest('.produto, .tamanho');
+        if (el) el.hidden = !ok;
       });
-      return cap(listaTexto(partes.map((t, i) => (i ? t.charAt(0).toLowerCase() + t.slice(1) : t))));
-    };
-    const linhas = grupos.map((g, i) => {
-      const completo = g.disp.length === todos.length;
-      const todasLojas = g.lojas.length === CFG.lojas.length;
-      const anterior = grupos[i - 1];
-      let oque = 'Cardápio completo';
-      if (!completo) {
-        const novos = anterior ? g.disp.filter((p) => !anterior.disp.some((x) => x.id === p.id)) : [];
-        const contemAnterior = anterior && anterior.disp.every((p) => g.disp.some((x) => x.id === p.id));
-        oque = contemAnterior && novos.length ? `+ ${descrever(novos).toLowerCase()}` : descrever(g.disp);
-      }
-      const onde = todasLojas ? 'Todas as lojas' : `Só na loja ${listaTexto(g.lojas.map((l) => `${l.nome}${l.selo ? ` (${l.selo.toLowerCase()})` : ''}`))}`;
-      const dias = textoDias(g.dias, { feriados: completo && todasLojas && CFG.feriadoCardapioCompleto !== false });
-      return `<li><span class="agenda__dias">${esc(dias)}</span><span class="agenda__oque">${esc(oque)}</span><span class="agenda__onde">${esc(onde)}</span></li>`;
+      if (secao) secao.hidden = !visiveis;
+      const link = $(`[data-cat="${cat.id}"]`);
+      if (link) link.hidden = !visiveis;
     });
-    $('[data-agenda]').innerHTML = `<p class="agenda__cab">${ico('cal')}O que tem em cada dia</p><ul class="agenda__lista">${linhas.join('')}</ul>`;
+  }
+
+  let diasCardapio = [];
+
+  function renderQuando() {
+    const box = $('[data-quando]');
+    diasCardapio = diasDoCardapio();
+    if (!diasCardapio.length) { box.innerHTML = ''; filtrarCardapio(null); return; }
+    if (!diasCardapio.some((x) => iso(x.d) === pedido.data)) {
+      // primeiro dia em que tudo o que já está no pedido sai; senão, o primeiro dia de atendimento
+      const tudoSai = (x) => itens().every(({ p }) => itemDisponivel(p, x.d));
+      pedido.data = iso((diasCardapio.find(tudoSai) || diasCardapio[0]).d);
+    }
+    box.innerHTML = `<fieldset>
+        <legend>Para quando é o pedido?</legend>
+        <div class="dias">${diasCardapio.map((x) => `<label class="dia">
+          <input type="radio" name="dia-cardapio" value="${iso(x.d)}"${iso(x.d) === pedido.data ? ' checked' : ''}>
+          <span><b>${esc(x.rotulo)}</b><small>${esc(x.sub)}</small></span>
+        </label>`).join('')}</div>
+      </fieldset>
+      <div class="quando__nota" data-quando-nota aria-live="polite"></div>`;
+    filtrarCardapio(deIso(pedido.data));
+    renderNotaQuando();
+  }
+
+  function renderNotaQuando() {
+    const box = $('[data-quando-nota]');
+    const x = box && diasCardapio.find((y) => iso(y.d) === pedido.data);
+    if (!x) return;
+    const linhas = [];
+    const nome = nomeDoDia(x.d);
+    if (especial(x.d) === 'feriado') linhas.push('Feriado: cardápio completo.');
+    if (x.lojas.length < CFG.lojas.length) {
+      const nomes = listaTexto(x.lojas.map((l) => `${l.nome}${l.selo ? ` (${l.selo.toLowerCase()})` : ''}`));
+      linhas.push(`${cap(nome)}, só ${x.lojas.length === 1 ? `a loja ${nomes} abre` : `as lojas ${nomes} abrem`}.`);
+    }
+    const total = Object.keys(PRODUTOS).length;
+    if (saiNoDia(x.d).length < total) {
+      const completos = diasCardapio.filter((y) => saiNoDia(y.d).length === total).slice(0, 2);
+      if (completos.length) linhas.push(`Cardápio completo ${listaTexto(completos.map((y) => nomeDoDia(y.d)))}.`);
+    }
+    const fora = indisponiveis();
+    if (fora.length) {
+      linhas.push(`<span class="quando__alerta">Do seu pedido, ${esc(listaTexto(fora.map((p) => p.nome.toLowerCase())))} não ${fora.length === 1 ? 'sai' : 'saem'} ${esc(nome)}.</span>`);
+    }
+    box.innerHTML = linhas.map((l) => `<p>${l.startsWith('<span') ? l : esc(l)}</p>`).join('');
+  }
+
+  function escolherDia(valor) {
+    pedido.data = valor;
+    pedido.hora = '';
+    filtrarCardapio(deIso(valor));
+    renderNotaQuando();
   }
 
   /* ------------------------------------------------------------------
@@ -373,6 +428,7 @@
   function atualizar(id) {
     if (id) atualizarControles(id); else Object.keys(PRODUTOS).forEach(atualizarControles);
     atualizarResumo();
+    renderNotaQuando();
     if (!dlg.open) return;
     if (etapa === 'itens') {
       const naTela = $$('[data-item]', $('[data-itens]')).map((li) => li.dataset.item).join();
@@ -470,6 +526,7 @@
     const temMaionese = Object.keys(carrinho).some((id) => PRODUTOS[id].categoria === 'maionese');
     const lista = (CFG.sugestoes || [])
       .filter((id) => PRODUTOS[id] && !carrinho[id] && !(PRODUTOS[id].categoria === 'maionese' && temMaionese))
+      .filter((id) => !pedido.data || itemDisponivel(PRODUTOS[id], deIso(pedido.data)))
       .slice(0, 2);
     if (!qtdTotal() || !lista.length) { box.innerHTML = ''; return; }
     box.innerHTML = `<p class="sugestoes__titulo">Combina com o seu pedido</p>
@@ -567,6 +624,7 @@
       </label>`).join('');
     renderHoras();
     renderAlerta();
+    if (pedido.data) renderQuando(); // o cardápio acompanha o dia escolhido aqui
   }
 
   function renderHoras() {
@@ -766,6 +824,7 @@
     form.elements.obs.value = '';
     form.elements.troco.value = '';
     atualizar();
+    renderQuando();
     fecharPedido();
     avisar('Pronto! Pode montar um novo pedido.');
   }
@@ -798,7 +857,7 @@
     else if ('abrirPedido' in ds) abrirPedido('itens');
     else if ('fechar' in ds) fecharPedido();
     else if ('voltar' in ds || 'voltarItens' in ds) irPara('itens');
-    else if ('continuar' in ds) irPara('dados');
+    else if ('continuar' in ds) { lojaAbertaNoDia(); irPara('dados'); }
     else if ('novoPedido' in ds) novoPedido();
     else if ('retirarEm' in ds) retirarEm(ds.retirarEm);
     else if ('removerIndisponiveis' in ds) removerIndisponiveis();
@@ -809,12 +868,26 @@
     const el = e.target;
     if (el.name === 'modo') { pedido.modo = el.value; renderDados(); }
     else if (el.name === 'loja') { pedido.loja = el.value; renderDias(); limparErro('data'); }
-    else if (el.name === 'data') { pedido.data = el.value; renderHoras(); renderAlerta(); limparErro('data'); limparErro('hora'); }
+    else if (el.name === 'data') { pedido.data = el.value; renderHoras(); renderAlerta(); renderQuando(); limparErro('data'); limparErro('hora'); }
     else if (el.name === 'hora') { pedido.hora = el.value; limparErro('hora'); }
     else if (el.name === 'pagamento') { pedido.pagamento = el.value; renderPagamentos(); }
   });
   form.addEventListener('input', (e) => { if (['nome', 'endereco', 'bairro'].includes(e.target.name)) limparErro(e.target.name); });
   form.addEventListener('submit', enviar);
+
+  // dia escolhido em cima do cardápio
+  $('[data-quando]').addEventListener('change', (e) => {
+    if (e.target.name === 'dia-cardapio') escolherDia(e.target.value);
+  });
+
+  /** Ao seguir para a retirada: se a loja salva não abre no dia escolhido, sugere uma que abre. */
+  function lojaAbertaNoDia() {
+    if (pedido.modo !== 'retirar' || !pedido.data) return;
+    const d = deIso(pedido.data);
+    if (opcoesHorario(LOJAS[pedido.loja], d).length) return;
+    const aberta = CFG.lojas.find((l) => opcoesHorario(l, d).length);
+    if (aberta) pedido.loja = aberta.id;
+  }
 
   // carrinho sincronizado entre abas
   window.addEventListener('storage', (e) => {
@@ -893,9 +966,22 @@
   /* ------------------------------------------------------------------
      Início
      ------------------------------------------------------------------ */
+  /* faixa do hero com os nomes do cardápio rolando */
+  function renderFaixa() {
+    const trilho = $('[data-faixa]');
+    if (!trilho) return;
+    const nomes = CARDAPIO.flatMap((c) => (c.destaque ? [c.titulo] : c.itens.map((p) => p.nome)));
+    if (!nomes.length) return;
+    // metade do trilho precisa ser mais larga que a tela, para o loop não deixar buraco
+    const lista = `<ul class="faixa__lista">${nomes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`;
+    trilho.innerHTML = lista.repeat(4);
+    trilho.closest('.faixa').hidden = false;
+  }
+
   function iniciar() {
+    renderFaixa();
     renderCardapio();
-    renderAgenda();
+    renderQuando();
     renderLojas();
 
     const contato = linkWhatsApp(CFG.mensagemContato || '');

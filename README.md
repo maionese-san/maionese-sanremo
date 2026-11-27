@@ -36,9 +36,12 @@ nesta pasta.
 Horário `null` significa "a loja abre, mas o horário não foi informado". Nesse caso,
 o site mostra "consulte" e o cliente escolhe "Combinar o horário pelo WhatsApp".
 
-O quadro "O que tem em cada dia", os selos de dia nos produtos, os avisos no
-pedido e os dados estruturados para o Google são gerados a partir desses dois
-arquivos. Não é preciso editar texto em outro lugar.
+O cardápio é automático: acima dele o cliente escolhe o dia do pedido (já vem
+marcado o próximo dia em que alguma loja atende) e só aparecem os itens que saem
+nesse dia. Feriados só entram com cardápio completo se estiverem em
+`datasEspeciais`. A faixa do topo, os avisos no pedido e os dados estruturados
+para o Google também saem desses dois arquivos. Não é preciso editar texto em
+outro lugar.
 
 ## Deploy automático (Vercel)
 
@@ -57,14 +60,18 @@ a Maionese: `git push maionese main`.
 
 Enquanto o site for só para revisão, o `vercel.json` manda `noindex` (fora do Google).
 
+A pasta `proposta/` é a proposta comercial do site, em
+https://maionese-sanremo.vercel.app/proposta/. Ela não faz parte do site: apague
+depois que a proposta for fechada.
+
 ## Publicar na Hostinger (site oficial)
 
 O domínio atual está na Hostinger (servidor `hcdn`, DNS `dns-parking.com`).
 
 1. Baixe uma cópia do site atual (`public_html`) como backup.
-2. Envie o conteúdo desta pasta para o `public_html` (Gerenciador de Arquivos ou FTP).
-   O `index.html` novo substitui o antigo. As imagens antigas em `img/` podem ser
-   apagadas depois.
+2. Envie o conteúdo desta pasta para o `public_html` (Gerenciador de Arquivos ou FTP),
+   menos a pasta `proposta/`. O `index.html` novo substitui o antigo. As imagens
+   antigas em `img/` podem ser apagadas depois.
 3. Teste no celular: monte um pedido e confira a mensagem que chega no WhatsApp.
 
 ## Google Ads

@@ -89,7 +89,7 @@
     <section class="hero">
       <div class="hero__in">
         <div class="hero__texto">
-          <p class="hero__sobre">Desde 1971 · Curitiba</p>
+          <p class="hero__sobre"><span class="hero__estrelas" aria-hidden="true">★★★★★</span>Casa de assados · Curitiba</p>
           <h1>A maionese que Curitiba chama de <em>a melhor do mundo</em></h1>
           <p class="hero__sub">Assados e acompanhamentos artesanais, feitos à mão. Monte seu pedido, escolha retirada ou entrega e envie tudo pronto pelo WhatsApp.</p>
           <div class="hero__ctas">
@@ -97,16 +97,28 @@
             <a class="btn btn--contorno btn--grande" href="#lojas">Lojas e horários</a>
           </div>
           <ul class="hero__fatos">
-            <li><svg class="ico" aria-hidden="true"><use href="#i-loja"/></svg>3 lojas: Seminário, Mercês e Juvevê</li>
-            <li><svg class="ico" aria-hidden="true"><use href="#i-moto"/></svg>Retirada ou entrega</li>
+            <li><b><span data-anos>55</span> anos</b> de tradição</li>
+            <li><b>3 lojas</b> em Curitiba</li>
+            <li><b>Retirada</b> ou entrega</li>
           </ul>
         </div>
         <figure class="hero__foto">
-          <div class="polaroid">
-            <img src="img/maionese-destaque.webp" alt="Pote de maionese San Remo com salsinha e o selo “A melhor maionese do Brasil”" width="800" height="562" fetchpriority="high">
-          </div>
+          <img src="img/maionese-destaque.webp" alt="Pote de maionese San Remo com salsinha e o selo “A melhor maionese do Brasil”" width="800" height="562" fetchpriority="high">
+          <svg class="hero__selo" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+            <defs><path id="selo-volta" d="M100 100m-74 0a74 74 0 1 1 148 0a74 74 0 1 1-148 0"/></defs>
+            <circle cx="100" cy="100" r="98" class="hero__selo-fundo"/>
+            <circle cx="100" cy="100" r="53" class="hero__selo-aro"/>
+            <g class="hero__selo-giro">
+              <text class="hero__selo-volta"><textPath href="#selo-volta">Feita à mão ★ Receita caseira ★ Curitiba ★</textPath></text>
+            </g>
+            <text x="100" y="86" class="hero__selo-rot">desde</text>
+            <text x="100" y="125" class="hero__selo-num">1971</text>
+          </svg>
           <figcaption class="faixa-preco">Maionese a partir de <strong data-preco-min>R$ 25,00</strong></figcaption>
         </figure>
+      </div>
+      <div class="faixa" aria-hidden="true" hidden>
+        <div class="faixa__trilho" data-faixa></div>
       </div>
     </section>
 
@@ -128,7 +140,7 @@
         <h2 id="cardapio-titulo" class="titulo-secao">Cardápio</h2>
         <p class="cardapio__intro">Preço por pote, porção ou unidade. Pesos aproximados.</p>
       </div>
-      <div class="agenda" data-agenda></div>
+      <div class="quando" data-quando></div>
       <div data-cardapio></div>
       <noscript>
         <p class="aviso-noscript">Para montar o pedido pelo site, ative o JavaScript do navegador. Ou peça direto pelo WhatsApp: <a href="https://wa.me/554133696969">(41) 3369-6969</a>.</p>
