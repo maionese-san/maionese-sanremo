@@ -195,7 +195,14 @@
       display: flex; flex-direction: column; gap: 6px;
     }
     .preco--mensal { border: 2px solid var(--vinho); box-shadow: var(--sombra); }
+    .preco__topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
     .preco__nome { font-weight: 900; font-size: 1.05rem; }
+    .preco__selo {
+      background: var(--amarelo); color: var(--carvao); border-radius: 999px; padding: 4px 11px;
+      font-weight: 900; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .preco__de { margin-top: 6px; font-weight: 800; color: var(--tinta-2); }
+    .preco__de s { text-decoration-thickness: 2px; text-decoration-color: var(--vinho-txt); }
     .preco__valor {
       font-family: var(--display); font-weight: 400; font-size: 3.6rem; line-height: .95; letter-spacing: .01em;
       font-variant-numeric: tabular-nums;
@@ -364,9 +371,10 @@ Pode confirmar, por favor?<small>09:12</small></div>
       <h2 class="titulo" id="t-valor">Site pronto e alguém cuidando dele</h2>
       <div class="precos">
         <article class="preco">
-          <h3 class="preco__nome">Site novo</h3>
-          <p class="preco__valor">R$ 4.500</p>
-          <p class="preco__cond">50% na aprovação e 50% com o site no ar, ou 3x de R$ 1.500.</p>
+          <div class="preco__topo"><h3 class="preco__nome">Site novo</h3><span class="preco__selo">Abaixo do mercado</span></div>
+          <p class="preco__de">De <s>R$ 2.500</s> por</p>
+          <p class="preco__valor">R$ 523,33</p>
+          <p class="preco__cond">À vista. Fiz um preço abaixo do mercado para a San Remo.</p>
           <ul class="lista">
             <li>O site completo, como está na prévia</li>
             <li>Ajustes com as informações que vocês confirmarem: preços, horários, entrega e fotos</li>
@@ -377,7 +385,7 @@ Pode confirmar, por favor?<small>09:12</small></div>
         </article>
         <article class="preco preco--mensal">
           <h3 class="preco__nome">Suporte mensal</h3>
-          <p class="preco__valor">R$ 290<small>/mês</small></p>
+          <p class="preco__valor">R$ 97<small>/mês</small></p>
           <p class="preco__cond">Começa quando o site entra no ar. Sem fidelidade: é só avisar com 30 dias.</p>
           <ul class="lista">
             <li>Troca de preços, itens e fotos do cardápio</li>
